@@ -46,14 +46,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-8 px-2 sm:px-4">
+      <Card className="w-full max-w-md shadow-lg dark:bg-gray-800">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <img src="/placeholder.svg" alt="Logo" className="h-12 w-12" />
+            <img src="/placeholder.svg" alt="Logo" className="h-12 w-12 rounded-full bg-blue-600 p-2 dark:bg-gray-700" />
           </div>
-          <CardTitle className="text-2xl text-center font-bold">Entrar na plataforma</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl text-center font-bold text-blue-700 dark:text-gray-100">Entrar na plataforma</CardTitle>
+          <CardDescription className="text-center text-gray-600 dark:text-gray-300">
             Entre com suas credenciais abaixo
           </CardDescription>
         </CardHeader>
@@ -65,9 +65,9 @@ const Login = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="dark:text-gray-200">Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="seu@email.com" {...field} />
+                      <Input placeholder="seu@email.com" {...field} className="dark:bg-gray-700 dark:text-gray-100" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -78,31 +78,24 @@ const Login = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel className="dark:text-gray-200">Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
+                      <Input type="password" placeholder="******" {...field} className="dark:bg-gray-700 dark:text-gray-100" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-blue-600 text-white dark:bg-blue-700 dark:text-gray-100 hover:bg-blue-700 dark:hover:bg-blue-800" disabled={isLoading}>
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
           </Form>
-          <div className="text-sm text-center mt-4 text-muted-foreground">
-            <span>Para fins de demonstração:</span>
-            <ul className="mt-2 space-y-1">
-              <li>Admin: admin@example.com / password</li>
-              <li>Aluno: qualquer email / password</li>
-            </ul>
-          </div>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">
             Não tem uma conta?{" "}
-            <Link to="/register" className="text-primary hover:underline">
+            <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline">
               Registrar
             </Link>
           </div>

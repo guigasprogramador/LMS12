@@ -54,15 +54,15 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-8 px-2 sm:px-4">
+      <Card className="w-full max-w-md shadow-lg dark:bg-gray-800">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <img src="/placeholder.svg" alt="Logo" className="h-12 w-12" />
+            <img src="/placeholder.svg" alt="Logo" className="h-12 w-12 rounded-full bg-blue-600 p-2 dark:bg-gray-700" />
           </div>
-          <CardTitle className="text-2xl text-center font-bold">Criar uma conta</CardTitle>
-          <CardDescription className="text-center">
-            Preencha os dados abaixo para se registrar
+          <CardTitle className="text-2xl text-center font-bold text-blue-700 dark:text-gray-100">Criar nova conta</CardTitle>
+          <CardDescription className="text-center text-gray-600 dark:text-gray-300">
+            Preencha os campos para se registrar
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,9 +73,9 @@ const Register = () => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome completo</FormLabel>
+                    <FormLabel className="dark:text-gray-200">Nome completo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Seu nome" {...field} />
+                      <Input placeholder="Seu nome completo" {...field} className="dark:bg-gray-700 dark:text-gray-100" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -86,9 +86,9 @@ const Register = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="dark:text-gray-200">Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="seu@email.com" {...field} />
+                      <Input placeholder="seu@email.com" {...field} className="dark:bg-gray-700 dark:text-gray-100" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -99,9 +99,9 @@ const Register = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel className="dark:text-gray-200">Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
+                      <Input type="password" placeholder="Crie uma senha forte" {...field} className="dark:bg-gray-700 dark:text-gray-100" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -112,24 +112,24 @@ const Register = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirmar senha</FormLabel>
+                    <FormLabel className="dark:text-gray-200">Confirmar Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
+                      <Input type="password" placeholder="Confirme sua senha" {...field} className="dark:bg-gray-700 dark:text-gray-100" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-blue-600 text-white dark:bg-blue-700 dark:text-gray-100 hover:bg-blue-700 dark:hover:bg-blue-800" disabled={isLoading}>
                 {isLoading ? "Registrando..." : "Registrar"}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">
             Já tem uma conta?{" "}
-            <Link to="/login" className="text-primary hover:underline">
+            <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
               Entrar
             </Link>
           </div>

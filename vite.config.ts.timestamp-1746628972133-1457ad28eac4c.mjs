@@ -2,7 +2,7 @@
 import { defineConfig } from "file:///C:/Users/DaviF/Downloads/course-navigator-platform-main/node_modules/vite/dist/node/index.js";
 import react from "file:///C:/Users/DaviF/Downloads/course-navigator-platform-main/node_modules/@vitejs/plugin-react-swc/index.mjs";
 import path from "path";
-import { componentTagger } from "file:///C:/Users/DaviF/Downloads/course-navigator-platform-main/node_modules/lovable-tagger/dist/index.js";
+// Edufactory configuration
 var __vite_injected_original_dirname = "C:\\Users\\DaviF\\Downloads\\course-navigator-platform-main";
 var vite_config_default = defineConfig(({ mode }) => ({
   server: {
@@ -11,7 +11,7 @@ var vite_config_default = defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger()
+    // Additional plugins can be added here
   ].filter(Boolean),
   resolve: {
     alias: {

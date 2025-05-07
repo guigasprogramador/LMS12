@@ -1,22 +1,22 @@
-# Welcome to your Lovable project
+# Welcome to Edufactory
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/2aa98d55-4f5c-4850-9fcf-f1818be46140
+**Edufactory Learning Platform**
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
+**Use Edufactory**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2aa98d55-4f5c-4850-9fcf-f1818be46140) and start prompting.
+Access the Edufactory platform to manage your learning content.
 
-Changes made via Lovable will be committed automatically to this repo.
+Changes made via Edufactory will be committed automatically to this repo.
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Edufactory.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -62,12 +62,12 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/2aa98d55-4f5c-4850-9fcf-f1818be46140) and click on Share -> Publish.
+Deploy using your preferred hosting service for the Edufactory platform.
 
-## Can I connect a custom domain to my Lovable project?
+## Can I connect a custom domain to my Edufactory platform?
 
 Yes, you can!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+To connect a domain, configure your hosting provider's domain settings.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Consult your hosting provider's documentation for domain setup instructions.
