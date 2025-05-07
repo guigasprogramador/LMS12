@@ -12,6 +12,7 @@ import { courseService } from "@/services";
 import * as enrollmentService from "@/services/courses/enrollmentService";
 import { GraduationCap, Clock, Users, BookOpen, Play } from "lucide-react";
 import { toast } from "sonner";
+import LoadingWithFeedback from "@/components/LoadingWithFeedback";
 
 const CourseDetails = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -92,8 +93,8 @@ const CourseDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p>Carregando...</p>
+      <div className="flex items-center justify-center min-h-[300px]">
+        <LoadingWithFeedback message="Carregando detalhes do curso..." />
       </div>
     );
   }

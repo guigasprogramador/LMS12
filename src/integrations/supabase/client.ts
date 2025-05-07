@@ -18,14 +18,76 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
     },
     fetch: async (url: string, options: RequestInit) => {
       try {
-        const response = await fetch(url, options);
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        // Adicionar timeout para evitar esperas infinitas
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos de timeout
+        
+        const fetchOptions = {
+          ...options,
+          signal: controller.signal
+        };
+        
+        try {
+          const response = await fetch(url, fetchOptions);
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            const errorMessage = `HTTP error! status: ${response.status}, body: ${errorText}`;
+            console.error(errorMessage);
+            throw new Error(errorMessage);
+          }
+          
+          return response;
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          
+          if (fetchError.name === 'AbortError') {
+            console.error('Requisiu00e7u00e3o abortada por timeout');
+            throw new Error('A conexu00e3o expirou. Verifique sua internet e tente novamente.');
+          }
+          
+          throw fetchError;
         }
-        return response;
       } catch (error) {
-        console.error('Network error:', error);
+        // Melhorar mensagens de erro de rede
+        console.error('Erro de rede:', error);
+        
+        // Criar mensagens de erro mais amigáveis
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          throw new Error('Falha na conexu00e3o com o servidor. Verifique sua conexu00e3o com a internet.');
+        }
+        
+        if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+          throw new Error('O servidor estu00e1 demorando para responder. Tente novamente mais tarde.');
+        }
+        
+        // Tratar limite de taxa de requisiu00e7u00f5es (rate limit)
+        if (error.message.includes('429') || 
+            error.message.includes('rate limit') || 
+            error.message.includes('over_request_rate_limit')) {
+          console.warn('Limite de requisiu00e7u00f5es atingido, implementando backoff exponencial...');
+          
+          // Implementar retry com backoff mais curto para melhorar a responsividade
+          // Esperar entre 1 e 3 segundos aleatoriamente para evitar sincronizau00e7u00e3o de requisiu00e7u00f5es
+          const minDelay = 1000; // 1 segundo
+          const maxDelay = 3000; // 3 segundos
+          const retryAfter = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+          
+          console.log(`Aguardando ${retryAfter/1000} segundos antes de tentar novamente...`);
+          await new Promise(resolve => setTimeout(resolve, retryAfter));
+          
+          // Tentar novamente a requisiu00e7u00e3o com os mesmos paru00e2metros
+          try {
+            console.log('Tentando requisiu00e7u00e3o novamente apu00f3s backoff...');
+            return await fetch(url, options);
+          } catch (retryError) {
+            console.error('Erro ao tentar novamente apu00f3s rate limit:', retryError);
+            // Mostrar uma mensagem mais amigável para o usuário
+            throw new Error('O servidor estu00e1 temporariamente sobrecarregado. Por favor, aguarde alguns instantes e tente novamente.');
+          }
+        }
+        
         throw error;
       }
     }

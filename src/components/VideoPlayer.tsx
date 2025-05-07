@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import VideoErrorFallback from './VideoErrorFallback';
 
 interface VideoPlayerProps {
   url: string;
@@ -46,6 +47,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setVideoUrl(cleanUrl);
   };
 
+  // Tentar novamente carregar o vídeo
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    try {
+      processVideoUrl(url);
+    } catch (err) {
+      console.error('Erro ao processar URL do vídeo durante retry:', err);
+      setError('Não foi possível carregar o vídeo. URL inválida.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Função para determinar o tipo de vídeo e retornar o player apropriado
   const renderVideoPlayer = () => {
     if (loading) {
@@ -53,11 +68,31 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
     
     if (error) {
-      return <div className="text-red-500">{error}</div>;
+      return <VideoErrorFallback error={error} onRetry={handleRetry} />;
     }
     
     if (!videoUrl) {
-      return <div>Nenhum vídeo disponível</div>;
+      return (
+        <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-md border border-gray-200">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-12 w-12 text-gray-400 mb-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+          <p className="text-gray-600 text-center">
+            Esta aula não possui vídeo. Consulte o conteúdo escrito abaixo.
+          </p>
+        </div>
+      );
     }
 
     // YouTube

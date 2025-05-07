@@ -1,5 +1,6 @@
 import { Course, Module, Lesson } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { requestQueue } from '@/utils/requestQueue';
 
 export const courseService = {
   async getCourses(): Promise<Course[]> {
@@ -152,50 +153,116 @@ export const courseService = {
     if (!courseId) throw new Error('ID do curso é obrigatório');
 
     try {
-      const { data, error } = await supabase
-        .from('courses')
-        .select(`*, modules:modules(*, lessons:lessons(*))`)
-        .eq('id', courseId)
-        .single();
+      // Usar a fila de requisições para evitar problemas de rate limit
 
-      if (error) throw error;
-      if (!data) throw new Error('Curso não encontrado');
+      // Primeiro, buscar o curso
+      const courseDataPromise = requestQueue.enqueue(() => 
+        supabase
+          .from('courses')
+          .select('*')
+          .eq('id', courseId)
+          .single()
+      );
+      
+      const { data: courseData, error: courseError } = await courseDataPromise;
+      
+      if (courseError) throw courseError;
+      if (!courseData) throw new Error('Curso não encontrado');
+      
+      // Depois, buscar os módulos relacionados ao curso
+      const modulesDataPromise = requestQueue.enqueue(() => 
+        supabase
+          .from('modules')
+          .select('*')
+          .eq('course_id', courseId)
+          .order('order_number', { ascending: true })
+      );
+      
+      const { data: modulesData, error: modulesError } = await modulesDataPromise;
+      
+      if (modulesError) throw modulesError;
+      
+      // Para cada módulo, buscar suas aulas de forma controlada
+      const modulesWithLessonsPromises = (modulesData || []).map(async (module) => {
+        // Usar a fila para cada requisição de aulas
+        const lessonsDataPromise = requestQueue.enqueue(() => 
+          supabase
+            .from('lessons')
+            .select('*')
+            .eq('module_id', module.id)
+            .order('order_number', { ascending: true })
+        );
+        
+        const { data: lessonsData, error: lessonsError } = await lessonsDataPromise;
+        
+        if (lessonsError) throw lessonsError;
+        
+        return {
+          ...module,
+          lessons: lessonsData || []
+        };
+      });
+      
+      // Aguardar todas as requisições de aulas serem concluídas
+      const modulesWithLessons = await Promise.all(modulesWithLessonsPromises);
 
+      // Mapear os módulos e aulas para o formato esperado pela aplicação
+      const formattedModules = modulesWithLessons.map((module: any) => ({
+        id: module.id,
+        courseId: module.course_id,
+        title: module.title,
+        description: module.description || '',
+        order: module.order_number,
+        lessons: (module.lessons || []).map((lesson: any) => ({
+          id: lesson.id,
+          moduleId: lesson.module_id,
+          title: lesson.title,
+          description: lesson.description || '',
+          duration: lesson.duration || '',
+          videoUrl: lesson.video_url || '',
+          content: lesson.content || '',
+          order: lesson.order_number,
+          isCompleted: false
+        }))
+      }));
+      
+      // Retornar o curso com seus mu00f3dulos e aulas
       return {
-        id: data.id,
-        title: data.title,
-        description: data.description || '',
-        thumbnail: data.thumbnail || '/placeholder.svg',
-        duration: data.duration || '',
-        instructor: data.instructor,
-        enrolledCount: data.enrolledcount || 0,
-        rating: data.rating || 0,
-        modules: (data.modules || []).map((module: any) => ({
-          id: module.id,
-          courseId: module.course_id,
-          title: module.title,
-          description: module.description || '',
-          order: module.order_number,
-          lessons: (module.lessons || []).map((lesson: any) => ({
-            id: lesson.id,
-            moduleId: lesson.module_id,
-            title: lesson.title,
-            description: lesson.description || '',
-            duration: lesson.duration || '',
-            videoUrl: lesson.video_url || '',
-            content: lesson.content || '',
-            order: lesson.order_number,
-            isCompleted: false
-          }))
-        })),
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
+        id: courseData.id,
+        title: courseData.title,
+        description: courseData.description || '',
+        thumbnail: courseData.thumbnail || '/placeholder.svg',
+        duration: courseData.duration || '',
+        instructor: courseData.instructor,
+        enrolledCount: courseData.enrolledcount || 0,
+        rating: courseData.rating || 0,
+        modules: formattedModules,
+        createdAt: courseData.created_at,
+        updatedAt: courseData.updated_at,
         isEnrolled: false,
         progress: 0
       };
     } catch (error) {
       console.error('Erro ao buscar curso:', error);
-      throw new Error('Falha ao buscar curso');
+      
+      // Tratamento de erros mais detalhado
+      if (error instanceof Error) {
+        // Se for um erro de relacionamento entre tabelas, fornecer uma mensagem mais clara
+        if (error.message.includes('relationship between') && error.message.includes('courses') && error.message.includes('modules')) {
+          throw new Error('Erro no banco de dados: Relacionamento entre cursos e mu00f3dulos nu00e3o encontrado. Verifique a estrutura do banco de dados.');
+        }
+        
+        // Se for um erro de rede, fornecer uma mensagem mais clara
+        if (error.message.includes('network') || error.message.includes('Network')) {
+          throw new Error('Erro de conexu00e3o: Verifique sua conexu00e3o com a internet e tente novamente.');
+        }
+        
+        // Passar a mensagem original se for um erro conhecido
+        throw new Error(`Erro ao buscar curso: ${error.message}`);
+      }
+      
+      // Erro genu00e9rico
+      throw new Error('Falha ao buscar curso. Tente novamente mais tarde.');
     }
   }
 };

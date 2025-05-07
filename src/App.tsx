@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import NetworkErrorBoundary from "./components/NetworkErrorBoundary";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -33,8 +34,9 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
+        <NetworkErrorBoundary>
+          <BrowserRouter>
+            <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -46,7 +48,7 @@ const App = () => (
               <Route path="/courses" element={<CourseCatalog />} />
               <Route path="/courses/:courseId" element={<CourseDetails />} />
               <Route path="/courses/:courseId/content" element={<CourseContent />} />
-              <Route path="/aluno/curso/:courseId/player" element={<CoursePlayer />} />
+              <Route path="/aluno/curso/:id/player" element={<CoursePlayer />} />
               <Route path="/certificates/:certificateId" element={<Certificate />} />
             </Route>
             
@@ -65,8 +67,9 @@ const App = () => (
             
             {/* 404 page */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+            </Routes>
+          </BrowserRouter>
+        </NetworkErrorBoundary>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

@@ -120,7 +120,7 @@ export const moduleService = {
 
           return modulesWithLessons;
         },
-        30 * 60 * 1000 // 30 minutos de cache para reduzir requisiu00e7u00f5es
+        10 * 60 * 1000 // 10 minutos de cache
       );
     } catch (error) {
       console.error('Erro ao buscar módulos do curso:', error);

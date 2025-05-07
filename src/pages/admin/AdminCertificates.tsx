@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -32,10 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Certificate, User } from "@/types";
-import { certificateService, userService, courseService } from "@/services/api";
+import { Certificate, User, Course } from "@/types";
+import { certificateService } from "@/services";
+import { userService } from "@/services";
+import { courseService } from "@/services";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal, Edit, Trash, Eye, Award } from "lucide-react";
+import { Plus, MoreHorizontal, Edit, Trash, Eye, Award, Search, RefreshCw, Download } from "lucide-react";
+import { CreateCertificateData } from "@/services/certificateService";
 
 interface CertificateFormData {
   userId: string;
@@ -54,21 +59,36 @@ const defaultFormData: CertificateFormData = {
 const AdminCertificates = () => {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<CertificateFormData>(defaultFormData);
   const [editingCertificateId, setEditingCertificateId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filterCourse, setFilterCourse] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  // Filtrar certificados com base nos criu00e9rios de busca
+  const filteredCertificates = certificates.filter(cert => {
+    const matchesSearch = searchTerm === '' || 
+      cert.userName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      cert.courseName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCourse = filterCourse === '' || cert.courseId === filterCourse;
+    
+    return matchesSearch && matchesCourse;
+  });
+
   const fetchData = async () => {
     try {
+      setIsLoading(true);
       const [certificatesData, usersData, coursesData] = await Promise.all([
         certificateService.getCertificates(),
-        userService.getUsers(),
+        userService.getAllUsers(), // Corrigido para usar getAllUsers em vez de getUsers
         courseService.getCourses(),
       ]);
       setCertificates(certificatesData);
@@ -89,6 +109,17 @@ const AdminCertificates = () => {
       userId,
       userName: selectedUser ? selectedUser.name : "",
     }));
+    
+    // Se o usuário já tiver certificados, verificar se já existe para o curso selecionado
+    if (formData.courseId && userId) {
+      const existingCert = certificates.find(
+        cert => cert.userId === userId && cert.courseId === formData.courseId
+      );
+      
+      if (existingCert) {
+        toast.warning(`Este aluno já possui um certificado para o curso selecionado`);
+      }
+    }
   };
 
   const handleCourseChange = (courseId: string) => {
@@ -98,6 +129,17 @@ const AdminCertificates = () => {
       courseId,
       courseName: selectedCourse ? selectedCourse.title : "",
     }));
+    
+    // Se o usuário já estiver selecionado, verificar se já existe certificado
+    if (formData.userId && courseId) {
+      const existingCert = certificates.find(
+        cert => cert.userId === formData.userId && cert.courseId === courseId
+      );
+      
+      if (existingCert) {
+        toast.warning(`Este aluno já possui um certificado para o curso selecionado`);
+      }
+    }
   };
 
   const handleEditCertificate = (certificate: Certificate) => {
@@ -114,12 +156,15 @@ const AdminCertificates = () => {
   const handleDeleteCertificate = async (certificateId: string) => {
     if (confirm("Tem certeza de que deseja excluir este certificado?")) {
       try {
+        setIsLoading(true);
         await certificateService.deleteCertificate(certificateId);
         toast.success("Certificado excluído com sucesso");
-        fetchData();
+        await fetchData();
       } catch (error) {
         console.error("Error deleting certificate:", error);
-        toast.error("Erro ao excluir certificado");
+        // O toast de erro já é exibido pelo serviço
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -127,8 +172,16 @@ const AdminCertificates = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar formulário
+    if (!formData.userId || !formData.courseId) {
+      toast.error("Selecione um aluno e um curso");
+      return;
+    }
+    
     try {
-      const certificateData = {
+      setIsSubmitting(true);
+      
+      const certificateData: CreateCertificateData = {
         ...formData,
         issueDate: new Date().toISOString()
       };
@@ -142,12 +195,13 @@ const AdminCertificates = () => {
       }
       
       setIsDialogOpen(false);
-      setFormData(defaultFormData);
-      setEditingCertificateId(null);
-      fetchData();
+      resetForm();
+      await fetchData();
     } catch (error) {
-      console.error("Error saving certificate:", error);
-      toast.error("Erro ao salvar certificado");
+      // O toast de erro já é exibido pelo serviço
+      console.error("Error submitting certificate:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -156,74 +210,109 @@ const AdminCertificates = () => {
     setEditingCertificateId(null);
   };
 
+  const handleDownloadCertificate = (certificateId: string) => {
+    // Em uma aplicau00e7u00e3o real, isso geraria um PDF para download
+    window.open(`/certificates/${certificateId}`, '_blank');
+    toast.success('Certificado aberto em nova aba');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Gerenciar Certificados</h1>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
+        <h1 className="text-3xl font-bold tracking-tight">Certificados</h1>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              resetForm();
-              setIsDialogOpen(true);
-            }}>
+            <Button onClick={resetForm}>
               <Plus className="h-4 w-4 mr-2" />
-              Novo Certificado
+              Emitir Certificado
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[95vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {editingCertificateId ? "Editar Certificado" : "Criar Novo Certificado"}
+              <DialogTitle className="text-xl sm:text-2xl">
+                {editingCertificateId ? "Editar Certificado" : "Emitir Novo Certificado"}
               </DialogTitle>
-              <DialogDescription>
-                Atribua um certificado a um aluno que completou um curso.
+              <DialogDescription className="text-sm sm:text-base">
+                {editingCertificateId
+                  ? "Atualize as informações do certificado abaixo."
+                  : "Preencha as informações para emitir um novo certificado."}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="userId">Aluno</label>
-                <Select
-                  value={formData.userId}
-                  onValueChange={handleUserChange}
-                >
-                  <SelectTrigger id="userId">
-                    <SelectValue placeholder="Selecione um aluno" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users
-                      .filter(user => user.role === "student")
-                      .map(user => (
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="userId" className="text-sm font-medium flex items-center">
+                    Aluno <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={formData.userId}
+                    onValueChange={handleUserChange}
+                    required
+                  >
+                    <SelectTrigger id="userId">
+                      <SelectValue placeholder="Selecione um aluno" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users && users.length > 0 ? users.map(user => (
                         <SelectItem key={user.id} value={user.id}>
-                          {user.name}
+                          {user.name || 'Usuário sem nome'}
                         </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                      )) : (
+                        <SelectItem key="no-users" value="" disabled>
+                          Nenhum usuário disponível
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="courseId" className="text-sm font-medium flex items-center">
+                    Curso <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={formData.courseId}
+                    onValueChange={handleCourseChange}
+                    required
+                  >
+                    <SelectTrigger id="courseId">
+                      <SelectValue placeholder="Selecione um curso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses && courses.length > 0 ? courses.map(course => (
+                        <SelectItem key={course.id} value={course.id}>
+                          {course.title || 'Curso sem título'}
+                        </SelectItem>
+                      )) : (
+                        <SelectItem key="no-courses" value="" disabled>
+                          Nenhum curso disponível
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label htmlFor="courseId">Curso</label>
-                <Select
-                  value={formData.courseId}
-                  onValueChange={handleCourseChange}
+              
+              <DialogFooter className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => setIsDialogOpen(false)}
                 >
-                  <SelectTrigger id="courseId">
-                    <SelectValue placeholder="Selecione um curso" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map(course => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <DialogFooter>
-                <Button type="submit">
-                  {editingCertificateId ? "Atualizar" : "Emitir Certificado"}
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !formData.userId || !formData.courseId}
+                  className="w-full sm:w-auto"
+                >
+                  {isSubmitting 
+                    ? "Salvando..." 
+                    : editingCertificateId 
+                      ? "Atualizar" 
+                      : "Emitir Certificado"
+                  }
                 </Button>
               </DialogFooter>
             </form>
@@ -231,6 +320,60 @@ const AdminCertificates = () => {
         </Dialog>
       </div>
 
+      {/* Filtros */}
+      <Card className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="searchTerm" className="text-sm font-medium">Buscar</Label>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="searchTerm"
+                placeholder="Buscar por aluno ou curso..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="filterCourse" className="text-sm font-medium">Filtrar por Curso</Label>
+            <Select
+              value={filterCourse}
+              onValueChange={setFilterCourse}
+            >
+              <SelectTrigger id="filterCourse">
+                <SelectValue placeholder="Todos os cursos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem key="all" value="">Todos os cursos</SelectItem>
+                {courses && courses.length > 0 ? courses.map(course => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.title || 'Curso sem título'}
+                  </SelectItem>
+                )) : null}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-end">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                setSearchTerm('');
+                setFilterCourse('');
+              }}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Limpar Filtros
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Tabela de Certificados */}
       <Card>
         {isLoading ? (
           <div className="flex items-center justify-center p-6">
@@ -244,18 +387,20 @@ const AdminCertificates = () => {
                   <TableHead>Aluno</TableHead>
                   <TableHead>Curso</TableHead>
                   <TableHead>Data de Emissão</TableHead>
-                  <TableHead className="w-[100px]">Ações</TableHead>
+                  <TableHead className="w-[120px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {certificates.length === 0 ? (
+                {filteredCertificates.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center">
-                      Nenhum certificado encontrado
+                    <TableCell colSpan={4} className="text-center py-6">
+                      {certificates.length === 0 
+                        ? "Nenhum certificado encontrado" 
+                        : "Nenhum certificado corresponde aos filtros aplicados"}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  certificates.map((certificate) => (
+                  filteredCertificates.map((certificate) => (
                     <TableRow key={certificate.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
@@ -267,30 +412,33 @@ const AdminCertificates = () => {
                       <TableCell>
                         {new Date(certificate.issueDate).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditCertificate(certificate)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteCertificate(certificate.id)}>
-                              <Trash className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => window.open(`/certificates/${certificate.id}`, "_blank")}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Visualizar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDownloadCertificate(certificate.id)}
+                            title="Visualizar"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditCertificate(certificate)}
+                            title="Editar"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteCertificate(certificate.id)}
+                            title="Excluir"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
