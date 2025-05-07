@@ -197,103 +197,126 @@ const AdminLessons = () => {
               Nova Aula
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>
+          <DialogContent className="w-[95vw] sm:max-w-[800px] max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-xl sm:text-2xl">
                 {editingLessonId ? "Editar Aula" : "Criar Nova Aula"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm sm:text-base">
                 Preencha os detalhes da aula abaixo.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="moduleId">Módulo</Label>
-                <Select
-                  value={formData.moduleId || moduleIdFromUrl}
-                  onValueChange={handleModuleSelect}
-                  disabled={!!moduleIdFromUrl}
-                  required
+            <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="moduleId" className="text-sm font-medium">Módulo</Label>
+                  <Select
+                    value={formData.moduleId || moduleIdFromUrl}
+                    onValueChange={handleModuleSelect}
+                    disabled={!!moduleIdFromUrl}
+                    required
+                  >
+                    <SelectTrigger id="moduleId">
+                      <SelectValue placeholder="Selecione o módulo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allModules.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="text-sm font-medium">Título</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      placeholder="Título da aula"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="order" className="text-sm font-medium">Ordem</Label>
+                    <Input
+                      id="order"
+                      name="order"
+                      type="number"
+                      min="1"
+                      value={formData.order}
+                      onChange={handleInputChange}
+                      placeholder="Ordem de exibição"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-sm font-medium">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Descreva a aula"
+                    rows={3}
+                    className="min-h-[80px] resize-y"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="videoUrl" className="text-sm font-medium">URL do Vídeo</Label>
+                    <Input
+                      id="videoUrl"
+                      name="videoUrl"
+                      value={formData.videoUrl}
+                      onChange={handleInputChange}
+                      placeholder="Link do vídeo (opcional)"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duration" className="text-sm font-medium">Duração</Label>
+                    <Input
+                      id="duration"
+                      name="duration"
+                      value={formData.duration}
+                      onChange={handleInputChange}
+                      placeholder="Ex: 10min, 1h, etc. (opcional)"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="content" className="text-sm font-medium">Conteúdo</Label>
+                  <Textarea
+                    id="content"
+                    name="content"
+                    value={formData.content}
+                    onChange={handleInputChange}
+                    placeholder="Conteúdo adicional (opcional)"
+                    rows={4}
+                    className="min-h-[120px] resize-y"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => (document.querySelector('[data-dialog-close]') as HTMLButtonElement)?.click()}
                 >
-                  <SelectTrigger id="moduleId">
-                    <SelectValue placeholder="Selecione o módulo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allModules.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  placeholder="Título da aula"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Descreva a aula"
-                  rows={3}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="order">Ordem</Label>
-                <Input
-                  id="order"
-                  name="order"
-                  type="number"
-                  min="1"
-                  value={formData.order}
-                  onChange={handleInputChange}
-                  placeholder="Ordem de exibição"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="videoUrl">URL do Vídeo</Label>
-                <Input
-                  id="videoUrl"
-                  name="videoUrl"
-                  value={formData.videoUrl}
-                  onChange={handleInputChange}
-                  placeholder="Link do vídeo (opcional)"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="content">Conteúdo</Label>
-                <Textarea
-                  id="content"
-                  name="content"
-                  value={formData.content}
-                  onChange={handleInputChange}
-                  placeholder="Conteúdo adicional (opcional)"
-                  rows={4}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duração</Label>
-                <Input
-                  id="duration"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  placeholder="Ex: 10min, 1h, etc. (opcional)"
-                />
-              </div>
-              <DialogFooter>
-                <Button type="submit">
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit"
+                  className="w-full sm:w-auto"
+                >
                   {editingLessonId ? "Atualizar" : "Criar"}
                 </Button>
               </DialogFooter>
